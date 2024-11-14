@@ -23,12 +23,14 @@ func (r TravelRepositoryDB) GetTravel() ([]model.Travel, error) {
 			p.price AS place_price,
 			p.detail AS place_detail,
 			e.date_event AS event_date,
-			COALESCE(AVG(r.rating), 0) AS review_rating
+			COALESCE(AVG(r.rating), 0) AS review_rating,
+			g.photo_url AS photo_url
 		FROM travels t
 		JOIN places p ON t.place_id = p.id
 		JOIN events e ON t.event_id = e.id
 		LEFT JOIN reviews r ON t.review_id = r.id
-		GROUP BY t.id, p.name, p.price, p.detail, e.date_event
+		LEFT JOIN galleries g ON p.gallery_id = g.id
+		GROUP BY t.id, p.name, p.price, p.detail, e.date_event, g.photo_url
 	`
 
 	rows, err := r.DB.Query(query)
@@ -51,6 +53,7 @@ func (r TravelRepositoryDB) GetTravel() ([]model.Travel, error) {
 			&travel.PlaceDetail,
 			&dateEvent,
 			&reviewRating,
+			&travel.PhotoURL,
 		)
 		if err != nil {
 			return nil, fmt.Errorf("error scanning row: %w", err)
@@ -58,9 +61,9 @@ func (r TravelRepositoryDB) GetTravel() ([]model.Travel, error) {
 
 		travel.EventDate = dateEvent
 		if reviewRating.Valid {
-			travel.ReviewRating = reviewRating.Float64 // Langsung assign Float64 jika valid
+			travel.ReviewRating = reviewRating.Float64
 		} else {
-			travel.ReviewRating = 0 // Jika tidak valid (NULL), set ke 0
+			travel.ReviewRating = 0
 		}
 
 		travels = append(travels, travel)

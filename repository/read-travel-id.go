@@ -15,11 +15,14 @@ func (r TravelRepositoryDB) GetTravelByID(id int) (model.Travel, error) {
 			p.price AS place_price,
 			p.detail AS place_detail,
 			e.date_event AS event_date,
-			r.rating AS review_rating
+			r.rating AS review_rating,
+			g.photo_url AS photo_url,
+			g.description AS photo_description
 		FROM travels t
 		JOIN places p ON t.place_id = p.id
 		JOIN events e ON t.event_id = e.id
 		LEFT JOIN reviews r ON t.review_id = r.id
+		LEFT JOIN galleries g ON p.gallery_id = g.id
 		WHERE t.id = $1
 	`
 
@@ -34,6 +37,8 @@ func (r TravelRepositoryDB) GetTravelByID(id int) (model.Travel, error) {
 		&travel.PlaceDetail,
 		&dateEvent,
 		&reviewRating,
+		&travel.PhotoURL,
+		&travel.PhotoDescription,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {

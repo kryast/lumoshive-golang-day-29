@@ -3,7 +3,6 @@ package handler
 import (
 	"day-29/library"
 	"day-29/model"
-	"fmt"
 	"net/http"
 )
 
@@ -12,12 +11,12 @@ func (h *TravelHandler) GetTravelByIDHandler(w http.ResponseWriter, r *http.Requ
 
 	travel, err := h.travelService.GetTravelByID(id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error fetching travel: %s", err.Error()), http.StatusInternalServerError)
+		library.Response400(w, err.Error())
 		return
 	}
 
 	if (travel == model.Travel{}) {
-		http.Error(w, "Travel not found", http.StatusNotFound)
+		library.Response404(w, "ID Not found")
 		return
 	}
 

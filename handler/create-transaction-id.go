@@ -4,7 +4,6 @@ import (
 	"day-29/library"
 	"day-29/model"
 	"day-29/service"
-	"fmt"
 	"net/http"
 	"strconv"
 )
@@ -25,16 +24,8 @@ func (th *TransactionHandler) CreateTransactionHandler(w http.ResponseWriter, r 
 	phone := r.FormValue("phone")
 	message := r.FormValue("message")
 	status := "In Process"
-	if name == "" || email == "" || phone == "" || message == "" || status == "" {
-		http.Error(w, "All fields are required", http.StatusBadRequest)
-		return
-	}
 
-	phoneInt, err := strconv.Atoi(phone)
-	if err != nil {
-		library.Response400(w, err.Error())
-		return
-	}
+	phoneInt, _ := strconv.Atoi(phone)
 
 	transaction := model.Transaction{
 		TravelID: id,
@@ -45,9 +36,15 @@ func (th *TransactionHandler) CreateTransactionHandler(w http.ResponseWriter, r 
 		Status:   status,
 	}
 
+	err := library.ValidateStruct(transaction)
+	if err != nil {
+		library.Response400(w, err.Error())
+		return
+	}
+
 	transactionID, err := th.TransactionService.CreateTransactionByTravelID(transaction)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error creating transaction: %s", err.Error()), http.StatusInternalServerError)
+		library.Response404(w, "ID Not Found")
 		return
 	}
 
