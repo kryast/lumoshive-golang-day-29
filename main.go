@@ -25,7 +25,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Get("/travel", TravelHandler.GetTravelHandler)
-	r.Get("/travel/{id}", TravelHandler.GetTravelByIDHandler)
+	// r.Get("/travel/{id}", TravelHandler.GetTravelByIDHandler)
 	r.Handle("/assets/*", http.StripPrefix("/assets/", http.FileServer(http.Dir("assets"))))
 
 	fmt.Println("Server started on port 8080")

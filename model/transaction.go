@@ -7,7 +7,11 @@ import (
 
 type Transaction struct {
 	ID       int
-	EventID  int
+	TravelID int
+	Name     string
+	Email    string
+	Phone    int
+	Message  string
 	Status   string
 	CreateAt time.Time
 	UpdateAt time.Time

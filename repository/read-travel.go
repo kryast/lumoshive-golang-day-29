@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"day-29/model"
+	"fmt"
 	"time"
 )
 
@@ -17,55 +18,54 @@ func NewTravelRepository(db *sql.DB) TravelRepositoryDB {
 func (r TravelRepositoryDB) GetTravel() ([]model.Travel, error) {
 	query := `
 		SELECT 
-			p.name AS place_name, 
-			p.price, 
-			p.detail, 
-			e.date_event AS event_date, 
-			r.rating, 
-			p.photo_url
-		FROM places p
-		JOIN events e ON p.id = e.place_id
-		JOIN transactions t ON e.id = t.event_id
-		LEFT JOIN reviews r ON t.id = r.transaction_id
+			t.id AS travel_id,
+			p.name AS place_name,
+			p.price AS place_price,
+			p.detail AS place_detail,
+			e.date_event AS event_date,
+			r.rating AS review_rating
+		FROM travels t
+		JOIN places p ON t.place_id = p.id
+		JOIN events e ON t.event_id = e.id
+		LEFT JOIN reviews r ON t.review_id = r.id
 	`
 
 	rows, err := r.DB.Query(query)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error executing query: %w", err)
 	}
 	defer rows.Close()
 
 	var travels []model.Travel
+
 	for rows.Next() {
 		var travel model.Travel
 		var dateEvent time.Time
-		var rating sql.NullInt64
+		var reviewRating sql.NullInt64
 
 		err := rows.Scan(
+			&travel.TravelID,
 			&travel.PlaceName,
-			&travel.Price,
-			&travel.Detail,
+			&travel.PlacePrice,
+			&travel.PlaceDetail,
 			&dateEvent,
-			&rating,
-			&travel.PhotoURL,
+			&reviewRating,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("error scanning row: %w", err)
 		}
 
 		travel.EventDate = dateEvent
-
-		if rating.Valid {
-			travel.Rating = int(rating.Int64)
-		} else {
-			travel.Rating = 0
+		if reviewRating.Valid {
+			travel.ReviewRating = int(reviewRating.Int64)
+			travel.ReviewRating = 0
 		}
 
 		travels = append(travels, travel)
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error iterating over rows: %w", err)
 	}
 
 	return travels, nil
