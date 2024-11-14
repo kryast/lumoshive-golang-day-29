@@ -18,16 +18,17 @@ func NewTravelRepository(db *sql.DB) TravelRepositoryDB {
 func (r TravelRepositoryDB) GetTravel() ([]model.Travel, error) {
 	query := `
 		SELECT 
-			t.id AS travel_id,
+			t.id ,
 			p.name AS place_name,
 			p.price AS place_price,
 			p.detail AS place_detail,
 			e.date_event AS event_date,
-			r.rating AS review_rating
+			COALESCE(AVG(r.rating), 0) AS review_rating
 		FROM travels t
 		JOIN places p ON t.place_id = p.id
 		JOIN events e ON t.event_id = e.id
 		LEFT JOIN reviews r ON t.review_id = r.id
+		GROUP BY t.id, p.name, p.price, p.detail, e.date_event
 	`
 
 	rows, err := r.DB.Query(query)
@@ -41,10 +42,10 @@ func (r TravelRepositoryDB) GetTravel() ([]model.Travel, error) {
 	for rows.Next() {
 		var travel model.Travel
 		var dateEvent time.Time
-		var reviewRating sql.NullInt64
+		var reviewRating sql.NullFloat64
 
 		err := rows.Scan(
-			&travel.TravelID,
+			&travel.ID,
 			&travel.PlaceName,
 			&travel.PlacePrice,
 			&travel.PlaceDetail,
@@ -57,8 +58,9 @@ func (r TravelRepositoryDB) GetTravel() ([]model.Travel, error) {
 
 		travel.EventDate = dateEvent
 		if reviewRating.Valid {
-			travel.ReviewRating = int(reviewRating.Int64)
-			travel.ReviewRating = 0
+			travel.ReviewRating = reviewRating.Float64 // Langsung assign Float64 jika valid
+		} else {
+			travel.ReviewRating = 0 // Jika tidak valid (NULL), set ke 0
 		}
 
 		travels = append(travels, travel)
